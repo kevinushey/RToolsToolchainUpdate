@@ -1,0 +1,81 @@
+---
+title: "MinGW-w64 Notes"
+author: "Duncan Murdoch"
+date: "March 10, 2015"
+output: 
+  rmarkdown::html_document:
+    toc: yes
+---
+
+## Introduction
+
+These notes describe the building of the gcc 4.9.2 compiler used on 
+Windows for the R release 3.2.0.
+
+## Installing cross-compiler
+
+Installation was done using the scripts from Elance contractor
+Doug R.  The full set of scripts are in [scripts.tar.gz](scripts.tar.gz).
+
+On Linux VM, installed scripts to `~/Mingw-w64`.
+
+Checked prerequisites:  
+```
+cd ~/Mingw-w64/
+./check_prerequisites.sh
+```
+all results listed as installed.
+
+Set `~/Mingw-w64/defaults` to
+```
+ROOT_DIR=$HOME/RtoolsStatic
+BUILD_ARCHITECTURES=(x32)
+USE_DWARF=no
+USE_MULTILIB=no
+
+PACKAGE_EXT=".tar.gz"
+COMPRESS="tar --hard-dereference -zvcf"
+DECOMPRESS="tar -xf"
+
+export GNU_URL="ftp://ftp.nluug.nl/mirror/gnu"
+GCC_LANGUAGES="c,c++,lto,fortran"
+
+JOBS=1
+CROSS_BUILD=`gcc -dumpmachine`
+
+NATIVE_ARCHITECTURES=(x32 x64)
+```
+
+Built the cross compilers using
+```
+./build-linux-cross.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2
+./build-linux-cross.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2 x64
+```
+
+then the native compilers using
+```
+./build-window-native.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2.native
+```
+
+These take a few hours to run, and produce a number of tarballs in
+`$HOME/RtoolsStatic/packages`; copies
+of two of them are here:
+
+  - Linux cross-compiler for 32 bit Windows output [linux32mingw32_gcc-4.9.2.toolchain.tar.gz](linux32mingw32_gcc-4.9.2.toolchain.tar.gz)
+  - Linux cross-compiler for 64 bit Windows output [linux32mingw64_gcc-4.9.2.toolchain.tar.gz](linux32mingw64_gcc-4.9.2.toolchain.tar.gz)
+
+The package files `mingw32mingw32_gcc-4.9.2.toolchain.tar.gz` and
+`mingw32mingw64_gcc-4.9.2.toolchain.tar.gz` contain the 32 and 64 bit
+native compilers that are included in Rtools.
+
+## Building multilib version
+
+This just doesn't work, as mentioned in the README.  Doug R. has
+done some research into it, but neither of us has been able to get it all 
+to work.
+
+## Building the SEH version
+
+This was done at first, but hasn't been tested with the latest version.  
+The expectation is that 64 bit SEH will not work with static libs, but this
+also hasn't been tested.
