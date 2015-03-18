@@ -10,7 +10,7 @@
 
 <meta name="author" content="Duncan Murdoch" />
 
-<meta name="date" content="2015-03-10" />
+<meta name="date" content="2015-03-18" />
 
 <title>MinGW-w64 Notes</title>
 
@@ -64,7 +64,7 @@ img {
 <div id="header">
 <h1 class="title">MinGW-w64 Notes</h1>
 <h4 class="author"><em>Duncan Murdoch</em></h4>
-<h4 class="date"><em>March 10, 2015</em></h4>
+<h4 class="date"><em>March 18, 2015</em></h4>
 </div>
 
 <div id="TOC">
@@ -73,12 +73,16 @@ img {
 <li><a href="#installing-cross-compiler">Installing cross-compiler</a></li>
 <li><a href="#building-multilib-version">Building multilib version</a></li>
 <li><a href="#building-the-seh-version">Building the SEH version</a></li>
+<li><a href="#threading-model">Threading model</a></li>
+<li><a href="#r-devel-patches-needed">R-devel patches needed</a></li>
+<li><a href="#test-cases">Test cases</a></li>
 </ul>
 </div>
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>These notes describe the building of the gcc 4.9.2 compiler used on Windows for the R release 3.2.0.</p>
+<p>These notes describe the building of the gcc 4.9.2 compiler we hope to use on Windows for the R release 3.2.x. It’s not stable enough yet and we’ve missed 3.2.0, but we hope to update these instructions and get it working on R-devel first, then backport it to the 3.2 branch.</p>
+<p>If you have test cases that cause problems, please send a link to <a href="mailto:murdoch.duncan@gmail.com">murdoch.duncan@gmail.com</a> and if reproducible I’ll add them to the test cases section below so we can work on fixing them and making sure they stay fixed.</p>
 </div>
 <div id="installing-cross-compiler" class="section level2">
 <h2>Installing cross-compiler</h2>
@@ -89,7 +93,7 @@ img {
 ./check_prerequisites.sh</code></pre>
 <p>all results listed as installed.</p>
 <p>Set <code>~/Mingw-w64/defaults</code> to</p>
-<pre><code>ROOT_DIR=$HOME/RtoolsStatic
+<pre><code>ROOT_DIR=$HOME/Rtools
 BUILD_ARCHITECTURES=(x32)
 USE_DWARF=no
 USE_MULTILIB=no
@@ -110,12 +114,13 @@ NATIVE_ARCHITECTURES=(x32 x64)</code></pre>
 ./build-linux-cross.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2 x64</code></pre>
 <p>then the native compilers using</p>
 <pre><code>./build-window-native.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2.native</code></pre>
-<p>These take a few hours to run, and produce a number of tarballs in <code>$HOME/RtoolsStatic/packages</code>; copies of two of them are here:</p>
+<p>These take a few hours to run, and produce a number of tarballs in <code>$HOME/RtoolsStatic/packages</code>; copies are here:</p>
 <ul>
 <li>Linux cross-compiler for 32 bit Windows output <a href="linux32mingw32_gcc-4.9.2.toolchain.tar.gz" class="uri">linux32mingw32_gcc-4.9.2.toolchain.tar.gz</a></li>
-<li>Linux cross-compiler for 64 bit Windows output <a href="linux32mingw64_gcc-4.9.2.toolchain.tar.gz" class="uri">linux32mingw64_gcc-4.9.2.toolchain.tar.gz</a></li>
+<li><p>Linux cross-compiler for 64 bit Windows output <a href="linux32mingw64_gcc-4.9.2.toolchain.tar.gz" class="uri">linux32mingw64_gcc-4.9.2.toolchain.tar.gz</a></p></li>
+<li>Windows native compiler for 32 bit Windows output <a href="mingw32mingw32_gcc-4.9.2.toolchain.tar.gz" class="uri">mingw32mingw32_gcc-4.9.2.toolchain.tar.gz</a></li>
+<li><p>Windows native compiler for 64 bit Windows output <a href="mingw32mingw64_gcc-4.9.2.toolchain.tar.gz" class="uri">mingw32mingw64_gcc-4.9.2.toolchain.tar.gz</a></p></li>
 </ul>
-<p>The package files <code>mingw32mingw32_gcc-4.9.2.toolchain.tar.gz</code> and <code>mingw32mingw64_gcc-4.9.2.toolchain.tar.gz</code> contain the 32 and 64 bit native compilers that are included in Rtools.</p>
 </div>
 <div id="building-multilib-version" class="section level2">
 <h2>Building multilib version</h2>
@@ -124,6 +129,55 @@ NATIVE_ARCHITECTURES=(x32 x64)</code></pre>
 <div id="building-the-seh-version" class="section level2">
 <h2>Building the SEH version</h2>
 <p>This was done at first, but hasn’t been tested with the latest version.<br />The expectation is that 64 bit SEH will not work with static libs, but this also hasn’t been tested.</p>
+</div>
+<div id="threading-model" class="section level2">
+<h2>Threading model</h2>
+<p>The threading model has been set using</p>
+<pre><code>--enable-threads=win32</code></pre>
+<p>in this build.</p>
+</div>
+<div id="r-devel-patches-needed" class="section level2">
+<h2>R-devel patches needed</h2>
+<p>Currently R-devel is set to use the older gcc 4.6.3 toolchain. To use the new toolchain, the following changes are needed:</p>
+<p>Copy <code>src/gnuwin32/MkRules.dist</code> to <code>src/gnuwin32/MkRules.local</code>.<br />Edit the latter file as follows:</p>
+<ul>
+<li><p><code>BINPREF</code> should be set to the path to the <code>bin</code> directory in the 32 bit compiler. <code>BINPREF64</code> should be set to the path to the 64 bit compiler.</p></li>
+<li><p><code>MULTI</code> should be left blank. <code>WIN</code> should be set to 32 or 64.</p></li>
+</ul>
+<p>For example, to build 32 bit R-devel:</p>
+<pre><code>BINPREF = c:/Rtools/gcc492_32/bin/
+WIN = 32
+MULTI =</code></pre>
+<p>For 64 bit R-devel:</p>
+<pre><code>BINPREF = c:/Rtools/gcc492_64/bin/
+WIN = 64
+MULTI =</code></pre>
+<p>Edit the <code>CXXFLAGS</code> in <code>src/gnuwin32/fixed/etc/Makeconf</code> to add the <code>-fno-asynchronous-unwind-tables</code> option, i.e.</p>
+<pre><code>CXXFLAGS = -O2 -Wall -fno-asynchronous-unwind-tables $(DEBUGFLAG) @EOPTS@</code></pre>
+</div>
+<div id="test-cases" class="section level2">
+<h2>Test cases</h2>
+<p>These are current and previous problems.</p>
+<ol style="list-style-type: decimal">
+<li><p>FIXED: <a href="https://github.com/kevinushey/RToolsTest">Rf_error problem</a>: This is a small package called RToolsTest, written by Kevin Ushey. It calls <code>Rf_error()</code> from C++, which caused a crash. Run it via</p>
+<pre><code>devtools::install_github(&quot;kevinushey/RToolsTest&quot;)
+RToolsTest::ouch()</code></pre>
+<p>The -fno-asynchronous-unwind-tables option appeared to fix this.</p></li>
+<li><p>Problem in V8: This works in the 64 bit build, but dies with a segfault in the 32 bit build:</p>
+<pre><code>install.packages(&quot;V8&quot;, type = &quot;source&quot;)
+library(V8)
+ct &lt;- new_context()</code></pre>
+<p>The segfault happens when <code>V8_make_context</code> in <code>RcppExports.cpp</code> is called. At the time of the crash, the stack is corrupt, with entries</p>
+<pre><code>v8::internal::JSObject::elements()
+v8::NeanderObject::get(int)
+v8::NeanderArray::length()
+v8::NeanderArray::add(v8::internal::Handle&lt;v8::internal::Object&gt;)
+v8::Template::Set(v8::Handle&lt;v8::String&gt;, v8::Handle&lt;v8::Data&gt;, v8::PropertyAttribute)
+make_context at V8.cpp:79
+V8_make_context(set+consoleSEXP) at RcppExports.cpp:17
+R_doDotCall()</code></pre>
+<p>followed by garbage.</p></li>
+</ol>
 </div>
 
 

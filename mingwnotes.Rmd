@@ -1,7 +1,7 @@
 ---
 title: "MinGW-w64 Notes"
 author: "Duncan Murdoch"
-date: "March 10, 2015"
+date: "March 18, 2015"
 output: 
   rmarkdown::html_document:
     toc: yes
@@ -9,8 +9,14 @@ output:
 
 ## Introduction
 
-These notes describe the building of the gcc 4.9.2 compiler used on 
-Windows for the R release 3.2.0.
+These notes describe the building of the gcc 4.9.2 compiler we hope
+to use on Windows for the R release 3.2.x.  It's not stable enough yet
+and we've missed 3.2.0, but we hope to update these instructions and
+get it working on R-devel first, then backport it to the 3.2 branch.
+
+If you have test cases that cause problems, please send a link to
+murdoch.duncan@gmail.com and if reproducible I'll add them to the test cases
+section below so we can work on fixing them and making sure they stay fixed.
 
 ## Installing cross-compiler
 
@@ -28,7 +34,7 @@ all results listed as installed.
 
 Set `~/Mingw-w64/defaults` to
 ```
-ROOT_DIR=$HOME/RtoolsStatic
+ROOT_DIR=$HOME/Rtools
 BUILD_ARCHITECTURES=(x32)
 USE_DWARF=no
 USE_MULTILIB=no
@@ -58,15 +64,14 @@ then the native compilers using
 ```
 
 These take a few hours to run, and produce a number of tarballs in
-`$HOME/RtoolsStatic/packages`; copies
-of two of them are here:
+`$HOME/RtoolsStatic/packages`; copies are here:
 
   - Linux cross-compiler for 32 bit Windows output [linux32mingw32_gcc-4.9.2.toolchain.tar.gz](linux32mingw32_gcc-4.9.2.toolchain.tar.gz)
   - Linux cross-compiler for 64 bit Windows output [linux32mingw64_gcc-4.9.2.toolchain.tar.gz](linux32mingw64_gcc-4.9.2.toolchain.tar.gz)
+  
+  - Windows native compiler for 32 bit Windows output [mingw32mingw32_gcc-4.9.2.toolchain.tar.gz](mingw32mingw32_gcc-4.9.2.toolchain.tar.gz)
+  - Windows native compiler for 64 bit Windows output [mingw32mingw64_gcc-4.9.2.toolchain.tar.gz](mingw32mingw64_gcc-4.9.2.toolchain.tar.gz)
 
-The package files `mingw32mingw32_gcc-4.9.2.toolchain.tar.gz` and
-`mingw32mingw64_gcc-4.9.2.toolchain.tar.gz` contain the 32 and 64 bit
-native compilers that are included in Rtools.
 
 ## Building multilib version
 
@@ -79,3 +84,82 @@ to work.
 This was done at first, but hasn't been tested with the latest version.  
 The expectation is that 64 bit SEH will not work with static libs, but this
 also hasn't been tested.
+
+## Threading model
+
+The threading model has been set using 
+```
+--enable-threads=win32
+```
+in this build.
+
+## R-devel patches needed
+
+Currently R-devel is set to use the older gcc 4.6.3 toolchain.  To use the 
+new toolchain, the following changes are needed:
+
+Copy `src/gnuwin32/MkRules.dist` to `src/gnuwin32/MkRules.local`.  
+Edit the latter file as follows:
+
+ - `BINPREF` should be set to the path to the `bin` directory in the
+    32 bit compiler.  `BINPREF64` should be set to the path to the
+    64 bit compiler.
+    
+ - `MULTI` should be left blank.  `WIN` should be set to 32 or 64.
+ 
+For example, to build 32 bit R-devel:
+
+```
+BINPREF = c:/Rtools/gcc492_32/bin/
+WIN = 32
+MULTI =
+```
+
+For 64 bit R-devel:
+
+```
+BINPREF = c:/Rtools/gcc492_64/bin/
+WIN = 64
+MULTI =
+```
+    
+Edit the `CXXFLAGS` in `src/gnuwin32/fixed/etc/Makeconf` to add the 
+`-fno-asynchronous-unwind-tables` option, i.e.
+
+```
+CXXFLAGS = -O2 -Wall -fno-asynchronous-unwind-tables $(DEBUGFLAG) @EOPTS@
+```
+
+## Test cases
+
+These are current and previous problems.
+
+1. FIXED:  [Rf_error problem](https://github.com/kevinushey/RToolsTest): This is a
+small package called RToolsTest, written by Kevin Ushey.  It calls
+`Rf_error()` from C++, which caused a crash.  Run it via
+```
+    devtools::install_github("kevinushey/RToolsTest")
+    RToolsTest::ouch()
+```
+The -fno-asynchronous-unwind-tables option appeared to fix this.
+
+2. Problem in V8:  This works in the 64 bit build, but dies with a segfault
+in the 32 bit build:
+```
+    install.packages("V8", type = "source")
+    library(V8)
+    ct <- new_context()
+```
+The segfault happens when `V8_make_context` in `RcppExports.cpp` is called.
+At the time of the crash, the stack is corrupt, with entries
+```
+    v8::internal::JSObject::elements()
+    v8::NeanderObject::get(int)
+    v8::NeanderArray::length()
+    v8::NeanderArray::add(v8::internal::Handle<v8::internal::Object>)
+    v8::Template::Set(v8::Handle<v8::String>, v8::Handle<v8::Data>, v8::PropertyAttribute)
+    make_context at V8.cpp:79
+    V8_make_context(set+consoleSEXP) at RcppExports.cpp:17
+    R_doDotCall()
+```
+followed by garbage.
