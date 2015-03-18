@@ -1,0 +1,43 @@
+#!/bin/bash
+
+SUBNAME=libiconv
+NAME=$SUBNAME-1.14
+SRC_DIR_NAME=$NAME
+URL=$GNU_URL/$SUBNAME/$NAME.tar.gz
+TYPE=.tar.gz
+
+
+PATCHES=( )
+
+DEPENDS=( )
+
+LICENSES=( COPYING COPYING.LIB )
+
+#
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	#
+  --disable-shared 
+	--enable-static
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+#
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+INSTALL_FLAGS=(
+)
+
+# **************************************************************************

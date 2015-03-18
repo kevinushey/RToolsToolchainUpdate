@@ -1,0 +1,37 @@
+gmp_version="6.0.0"
+mpfr_version="3.1.2"
+mpc_version="1.0.2"
+ppl_version="1.1"
+isl_version="0.12.2"
+cloog_version="0.18.1"
+gcc_bootstrap_version="4.9.2"
+gcc_version="4.9.2"
+
+libiconv_version="1.14"
+expat_version="2.1.0"
+mingw_w64_headers_version="v3.3.0"
+mingw_w64_crt_version="v3.3.0"
+mingw_w64_winpthreads_version="v3.3.0"
+binutils_version="2.25"
+make_version="4.0"
+
+TOOLCHAIN_ITEMS=(
+	'mingw_w64_headers,$shortname'
+	'mingw_w64_crt,$shortname'
+	'binutils,$shortname'
+	'gcc,$shortname'
+	'mingw_w64_winpthreads,$shortname'
+)
+
+
+function custom_toolchain_setup {
+		pushd $BUILDROOT/$shortname/$target/lib
+	  for i in *.dll.a; do 
+			F="${i%%.*}"
+			if [ ! -e $F.a ]; then
+				ln -s $i $F.a
+			fi
+		done
+		
+		popd
+}

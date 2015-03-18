@@ -1,0 +1,43 @@
+#!/bin/bash
+
+SUBNAME=isl
+SUBVERSION=0.12.2
+NAME=$SUBNAME-$SUBVERSION
+SRC_DIR_NAME=$NAME
+URL=http://isl.gforge.inria.fr/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+PATCHES=( )
+
+DEPENDS=( 'gmp' )
+
+LICENSES=( LICENSE )
+
+#
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	#
+  --disable-shared 
+	--enable-static
+	--with-gmp-prefix=$BUILDROOT
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

@@ -1,0 +1,31 @@
+#! /bin/env sh
+
+SOURCE_DIR="$ROOT_DIR/sources"
+PATCH_DIR="$TOP_DIR/patches"
+BUILD_DIR="$ROOT_DIR/build"
+PACKAGE_DIR="$ROOT_DIR/packages"
+
+BUILDROOT="$ROOT_DIR/root"
+PKGINSTALL_DIR="$ROOT_DIR/tmp"
+
+LOG_DIR="$ROOT_DIR/logs"
+
+CROSSCOMPILERS_DIR="$ROOT_DIR/cross-compilers"
+
+function setup_environment {
+
+	mkdir -p "$SOURCE_DIR"
+	mkdir -p "$PATCH_DIR"
+	mkdir -p "$BUILD_DIR"
+	mkdir -p "$PACKAGE_DIR"
+	mkdir -p "$LOG_DIR/package"
+
+	rm -fr $BUILDROOT	
+	mkdir $BUILDROOT	
+
+	rm -fr $PKGINSTALL_DIR
+	mkdir -p $PKGINSTALL_DIR
+
+	rm -fr "$CROSSCOMPILERS_DIR"
+	mkdir -p "$CROSSCOMPILERS_DIR"
+}

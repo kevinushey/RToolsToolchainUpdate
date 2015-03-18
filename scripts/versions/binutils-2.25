@@ -1,0 +1,63 @@
+#!/bin/bash
+
+SUBNAME=binutils
+SUBVERSION=2.25
+NAME=$SUBNAME-$SUBVERSION
+SRC_DIR_NAME=$NAME
+
+URL=$GNU_URL/$SUBNAME/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+PATCHES=( )
+
+DEPENDS=( )
+
+LICENSES=( 
+	COPYING
+	COPYING.LIB
+	COPYING3
+	COPYING3.LIB
+)
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	--target=$target
+	#
+	--prefix=$PREFIX
+	--with-sysroot=$PREFIX
+	--enable-64-bit-bfd
+  --enable-targets=i686-w64-mingw32,x86_64-w64-mingw32
+
+ 	$( [[ $USE_MULTILIB != yes ]] \
+    && echo "--disable-multilib" \
+  )
+	--disable-nls
+	--disable-werror
+	#
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+EXECUTE_AFTER_INSTALL=(
+	'mv "$PKGINSTALL_DIR/$BUILDROOT/$shortname"/* "$PKGINSTALL_DIR/"'
+ 	$( [[ $host == $target ]] && \
+      rm -f "$PKGINSTALL_DIR/lib/lib"*.a "$PKGINSTALL_DIR/include/"*.h \
+	)
+)
+
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

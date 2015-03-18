@@ -1,0 +1,47 @@
+#!/bin/bash
+
+NAME=mpfr-3.1.2
+SRC_DIR_NAME=$NAME
+URL=$GNU_URL/mpfr/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+#
+PATCHES=( )
+
+DEPENDS=( 'gmp' )
+
+LICENSES=( COPYING COPYING.LESSER )
+
+#
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	#
+  --disable-shared 
+	--enable-static
+	--with-gmp=$BUILDROOT
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+#
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

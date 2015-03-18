@@ -1,0 +1,295 @@
+function create_package
+(
+  pkg_prefix="$1"
+  pkgname="$2"
+
+	[[ -z "$3" ]] && pkg_suffix= || pkg_suffix="$3"
+
+  packagename="${pkg_prefix}-${pkgname}${pkg_suffix}"
+
+  logdir="$THIS_LOGBASE/${pkgname}"
+	logname=${logdir}/package${pkg_suffix}.log
+
+  mkdir -p "$logdir"
+
+  printf ">>> Packaging $packagename...\n"
+
+  pushd "$PKGINSTALL_DIR" > /dev/null
+  find . -name \*.la -exec rm -f {} \;
+  find . -type d -empty -delete
+
+  $COMPRESS $PACKAGE_DIR/$packagename${PACKAGE_EXT} * > "$logname" 2>&1 || {
+		printf "Failure packaging $project${pkg_suffix}. Check $logname for details.\n"; exit 1; 
+	}
+
+	popd > /dev/null
+  rm -rf "$PKGINSTALL_DIR"/*
+)
+
+function install_licenses
+(
+  project="$1"
+  files="$2"
+
+  licensedir="$PKGINSTALL_DIR/licenses/$project"
+  mkdir -p "$licensedir"
+  
+  printf ">>> Copying licences for $project.\n"
+  
+  for file in $files; do
+    cp "$SOURCE_DIR/$project/$file" "$licensedir/"
+  done
+)
+
+function stage_dependencies
+(
+  abisuffix="$2"
+  local -a _projects=( "${!3}" )
+  prefix="$4"
+
+  mkdir -p "$BUILDROOT/$prefix" && cd "$BUILDROOT/$prefix"
+  for project in "${_projects[@]}"; do
+  	this_version=$(eval "echo \$$(echo ${project}_version)")
+        this_name=${project}-${this_version}
+    		printf ">>> Installing dependency - $longname-$this_name\n"
+    		if [ -e "$PACKAGE_DIR/$longname-$this_name$abisuffix${PACKAGE_EXT}" ]; then
+    			this_file="$PACKAGE_DIR/$longname-$this_name$abisuffix${PACKAGE_EXT}"
+				else
+    			this_file="$PACKAGE_DIR/$longname-$this_name${PACKAGE_EXT}"
+        fi
+    		${DECOMPRESS} "$this_file" > /dev/null 2>&1 || exit 1
+  done
+)
+
+function install_dependencies
+(
+  suffix="$1"
+  local -a _projects=( "${!2}" )
+  
+  for proj in "${_projects[@]}"; do
+
+		project_info=$(eval "echo \$(echo ${proj})")
+    local -a arrIN=(${project_info//,/ })
+		[[ ${#arrIN[@]} == 1 ]] && prefix="" || prefix=${arrIN[1]}
+		project=${arrIN[0]}
+
+  	mkdir -p "$BUILDROOT/$prefix" && cd "$BUILDROOT/$prefix"
+  	this_version=$(eval "echo \$$(echo ${project}_version)")
+    this_name=${project}-${this_version}
+    printf ">>> Installing dependency - $longname-$this_name\n"
+    if [ -e "$PACKAGE_DIR/$longname-$this_name${suffix}${PACKAGE_EXT}" ]; then
+    	this_file="$PACKAGE_DIR/$longname-$this_name${suffix}${PACKAGE_EXT}"
+		else
+    	this_file="$PACKAGE_DIR/$longname-$this_name${PACKAGE_EXT}"
+    fi
+    ${DECOMPRESS} "$this_file" > /dev/null 2>&1 || exit 1
+	done
+)
+
+build_package() {
+	pkg=$1
+	HOST=$2
+	BUILD=$3
+	PREFIX=$4
+	SUFFIX=$5
+	DESTDIR=$6
+
+	target=$TARGET
+	exec_index=0
+
+	this_version=$(eval "echo \$$(echo ${pkg}_version)")
+	this_name=${pkg}-${this_version}
+
+	packagename="$PACKAGE_DIR/$longname-$this_name${SUFFIX}${PACKAGE_EXT}"
+
+	echo -e "-> \E[32;40m$pkg\E[37;40m"
+	[[  -f "$packagename" ]] && {
+		printf ">> Found $this_name${SUFFIX} package.\n"
+	  return
+	}
+
+	NAME=""
+	CONFIG_DIR_NAME=""
+	EXECUTE_AFTER_DEPENDS=()
+	EXECUTE_AFTER_INSTALL=()
+	EXECUTE_AFTER_PATCH=()
+	EXECUTE_AFTER_UNCOMPRESS=()
+	EXECUTE_AFTER_DOWNLOAD=()
+
+	#cd $TOP_DIR
+	. $TOP_DIR/versions/${this_name}
+
+	[[ -z $NAME ]] && continue
+
+ 	[[ "$CONFIG_DIR_NAME" == "" ]] && {
+    		CONFIG_DIR_NAME=$NAME
+  	}
+
+	THIS_SRCBASE=$SOURCE_DIR/$SRC_DIR_NAME
+	mkdir -p $THIS_SRCBASE
+
+	THIS_LOGBASE=$LOGBASE/$this_name
+	THIS_BUILDBASE=$BUILDBASE/$this_name
+
+	mkdir -p $THIS_LOGBASE 
+	mkdir -p $THIS_BUILDBASE 
+
+	DOWNLOAD_LOG=$THIS_LOGBASE/download.log
+	DOWNLOAD_MARKER=$THIS_SRCBASE/_download.marker
+	UNCOMPRESS_LOG=$THIS_LOGBASE/uncompress.log
+	UNCOMPRESS_MARKER=$THIS_SRCBASE/_uncompress.marker
+	CONFIGURE_LOG=$THIS_LOGBASE/configure.log
+	MAKE_LOG=$THIS_LOGBASE/make.log
+	INSTALL_LOG=$THIS_LOGBASE/install.log
+
+	func_download \
+		$SOURCE_DIR \
+		$SRC_DIR_NAME \
+		$TYPE \
+		$URL \
+		$DOWNLOAD_LOG \
+		$DOWNLOAD_MARKER \
+		$( grep 'REV=' $TOP_DIR/versions/${this_name} | sed 's|REV=||' )
+	result=$?
+
+	check_result $result $DOWNLOAD_LOG
+	[[ $result != 0 ]] && exit $result
+
+	[[ ${#EXECUTE_AFTER_DOWNLOAD[@]} > 0 ]] && {
+		func_execute \
+			$SOURCE_DIR \
+			$SRC_DIR_NAME \
+			"execute commands..." \
+			EXECUTE_AFTER_DOWNLOAD[@]
+		result=$?
+
+		check_result $result $THIS_LOGBASE/exec-$exec_index.log 
+		[[ $result != 0 ]] && exit $result
+	}
+
+	func_uncompress \
+		$SOURCE_DIR \
+		$SRC_DIR_NAME \
+		$TYPE \
+		$UNCOMPRESS_MARKER \
+		$UNCOMPRESS_LOG
+	result=$?
+
+	check_result $result $UNCOMPRESS_LOG
+	[[ $result != 0 ]] && exit $result
+
+	[[ ${#EXECUTE_AFTER_UNCOMPRESS[@]} > 0 ]] && {
+		func_execute \
+			$SOURCE_DIR \
+			$SRC_DIR_NAME \
+			"execute commands..." \
+			EXECUTE_AFTER_UNCOMPRESS[@]
+		result=$?
+
+		check_result $result $THIS_LOGBASE/exec-$exec_index.log 
+		[[ $result != 0 ]] && exit $result
+	}
+
+	func_apply_patches \
+		$SOURCE_DIR \
+		$SRC_DIR_NAME \
+		PATCHES[@]
+
+	[[ $? != 0 ]] && {
+		result=$?
+		check_result $result $THIS_LOGBASE/patch-$exec_index.log
+		[[ $result != 0 ]] && exit $result
+	}
+
+	[[ ${#EXECUTE_AFTER_PATCH[@]} >0 ]] && {
+		func_execute \
+			$SOURCE_DIR \
+			$SRC_DIR_NAME \
+			"execute commands..." \
+			EXECUTE_AFTER_PATCH[@]
+		result=$?
+		check_result $result $THIS_LOGBASE/exec-$exec_index.log
+		[[ $result != 0 ]] && exit $result
+	}
+
+	install_dependencies "${SUFFIX}" DEPENDS[@]
+
+	[[ ${#EXECUTE_AFTER_DEPENDS[@]} >0 ]] && {
+		func_execute \
+			$SOURCE_DIR \
+			$SRC_DIR_NAME \
+			"execute commands..." \
+			EXECUTE_AFTER_DEPENDS[@]
+		result=$?
+		check_result $result $THIS_LOGBASE/exec-$exec_index.log
+		[[ $result != 0 ]] && exit $result
+	}
+	#echo "after depends install"
+	#sh
+
+	configure_flags="${CONFIGURE_FLAGS[@]}"
+
+	func_configure \
+		$CONFIG_DIR_NAME \
+		$SRC_DIR_NAME \
+		"$configure_flags" \
+		$CONFIGURE_LOG
+	result=$?
+	check_result $result $CONFIGURE_LOG
+	[[ $result != 0 ]] && exit $result
+
+	make_flags="make ${MAKE_FLAGS[@]}"
+	func_make \
+		$CONFIG_DIR_NAME \
+		$SRC_DIR_NAME \
+		"$make_flags" \
+		$MAKE_LOG \
+		"building..." \
+		"$this_name-built"
+	result=$?
+	check_result $result $MAKE_LOG
+	[[ $result != 0 ]] && exit $result
+
+
+	install_flags="make ${INSTALL_FLAGS[@]} DESTDIR=${DESTDIR}"
+	func_make \
+		$CONFIG_DIR_NAME \
+		$SRC_DIR_NAME \
+		"$install_flags" \
+		$INSTALL_LOG \
+		"installing..." \
+		"$this_name-installed"
+	result=$?
+	check_result $result $INSTALL_LOG
+	[[ $result != 0 ]] && exit $result
+
+	#echo "after install"
+	#sh
+
+	[[ ${#EXECUTE_AFTER_INSTALL[@]} >0 ]] && {
+		func_execute \
+			$SOURCE_DIR \
+			$SRC_DIR_NAME \
+			"execute commands..." \
+			EXECUTE_AFTER_INSTALL[@]
+		result=$?
+		check_result $result $THIS_LOGBASE/exec-$exec_index.log
+		[[ $result != 0 ]] && exit $result
+	}
+ 
+	#echo "after install fixup"
+	#sh
+
+	#install_licenses ${this_name} ${LICENSES[@]}
+	install_licenses ${SRC_DIR_NAME} ${LICENSES[@]}
+
+	create_package "$longname" "$this_name" "${SUFFIX}"
+
+	rm -fr  "$BUILDROOT"/*
+
+	EXECUTE_AFTER_DEPENDS=()
+	EXECUTE_AFTER_INSTALL=()
+	EXECUTE_AFTER_PATCH=()
+	EXECUTE_AFTER_UNCOMPRESS=()
+	EXECUTE_AFTER_DOWNLOAD=()
+}

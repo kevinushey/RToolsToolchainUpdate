@@ -1,0 +1,60 @@
+
+download_package() {
+	pkg=$1
+	this_version=$(eval "echo \$$(echo ${pkg}_version)")
+	this_name=${pkg}-${this_version}
+
+	[[ ! -f $TOP_DIR/versions/${this_name} ]] && {
+		echo "script for package \"$this_name\" is not exists. terminate."
+		exit 1
+	}
+
+	[[ -n $( grep 'URL=' $TOP_DIR/versions/${this_name} ) ]] && {
+		echo -e "-> \E[32;40m$pkg\E[37;40m"
+
+		NAME=""
+		EXECUTE_AFTER_DOWNLOAD=()
+		cd $TOP_DIR
+		. $TOP_DIR/versions/${this_name}
+
+		[[ -z $NAME ]] && continue
+
+		mkdir -p $SRCS_DIR/$SRC_DIR_NAME
+
+		func_download \
+			$SRCS_DIR \
+			$SRC_DIR_NAME \
+			$TYPE \
+			$URL \
+			$SRCS_DIR/$SRC_DIR_NAME/download.log \
+			$SRCS_DIR/$SRC_DIR_NAME/_download.marker \
+			$( grep 'REV=' $TOP_DIR/versions/${this_name} | sed 's|REV=||' )
+		_result=$?
+
+		check_result $_result $SRCS_DIR/$SRC_DIR_NAME/download.log 
+		[[ $_result != 0 ]] && exit $_result
+
+		[[ ${#EXECUTE_AFTER_DOWNLOAD[@]} > 0 ]] && {
+			func_execute \
+				$SRCS_DIR \
+				$SRC_DIR_NAME \
+				"execute commands..." \
+				EXECUTE_AFTER_DOWNLOAD[@]
+			_result=$?
+
+			check_result $_result $LOGS_DIR/$SRC_DIR_NAME/exec-$_index.log 
+			[[ $_result != 0 ]] && exit $_result
+		}
+
+		func_uncompress \
+			$SRCS_DIR \
+			$SRC_DIR_NAME \
+			$TYPE \
+			$SRCS_DIR/$SRC_DIR_NAME/_uncompress.marker \
+			$SRCS_DIR/$SRC_DIR_NAME/uncompress.log
+		_result=$?
+
+		check_result $_result $SRCS_DIR/$SRC_DIR_NAME/uncompress.log 
+		[[ $_result != 0 ]] && exit $_result
+	}
+}

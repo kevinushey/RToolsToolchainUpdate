@@ -1,0 +1,51 @@
+#!/bin/bash
+
+SUBNAME=mpc
+NAME=$SUBNAME-1.0.2
+SRC_DIR_NAME=$NAME
+URL=$GNU_URL/$SUBNAME/$NAME.tar.gz
+TYPE=.tar.gz
+
+PATCHES=( )
+
+DEPENDS=(
+	'gmp'
+	'mpfr'
+)
+
+LICENSES=( COPYING.LESSER )
+
+#
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	#
+  --disable-shared 
+	--enable-static
+	--with-gmp=$BUILDROOT
+	--with-mpfr=$BUILDROOT
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+#
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

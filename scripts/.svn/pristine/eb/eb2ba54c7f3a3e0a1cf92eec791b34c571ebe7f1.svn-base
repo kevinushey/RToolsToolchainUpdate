@@ -1,0 +1,47 @@
+#!/bin/bash
+
+SUBNAME=cloog
+SUBVERSION=0.18.1
+NAME=$SUBNAME-$SUBVERSION
+SRC_DIR_NAME=$NAME
+URL=http://www.bastoul.net/cloog/pages/download/count.php3?url=./$NAME.tar.gz
+TYPE=.tar.gz
+
+PATCHES=( )
+
+DEPENDS=(
+	'gmp'
+	'isl'
+)
+
+LICENSES=( LICENSE )
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	#
+  --disable-shared 
+	--enable-static
+	--with-gmp-prefix=$BUILDROOT
+	--with-isl-prefix=$BUILDROOT
+	--with-bits=gmp
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

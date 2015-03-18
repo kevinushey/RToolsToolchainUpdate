@@ -1,0 +1,100 @@
+
+build_toolchain_prereqs() {
+	host="$1"
+	build="$2"
+	prefix="$3"
+	local_abisuffix="$4"
+	destdir="$5"
+	local -a _targets=( "${!6}" )
+	LOGBASE="$toolchain_log/prereq-$gcc_version-$host"
+	BUILDBASE="$toolchain_build/prereq-$gcc_version-$host"
+
+	# Directories
+	mkdir -p "$LOGBASE"
+	mkdir -p "$BUILDBASE"
+
+	for sub in "${_targets[@]}"; do
+	
+		build_package "$sub" "$host" "$build" \
+			"$prefix" \
+			"$local_abisuffix" \
+			"$destdir"
+
+		done
+}
+
+function build_toolchain_targets() {
+  prereqabisuffix="$1"
+  local -a _targets=( "${!2}" )
+
+  LOGBASE="$toolchain_log/$gcc_version-$host"
+  BUILDBASE="$toolchain_build/$gcc_version-$host"
+
+  # Directories
+  mkdir -p "$LOGBASE"
+  mkdir -p "$BUILDBASE"
+
+  PATH="$BUILDROOT/$shortname/bin:$PATH"
+
+  # Directories
+
+  for sub in "${_targets[@]}"; do
+
+    build_package "$sub" "$host" "$BUILD" \
+      "$BUILDROOT/$shortname" \
+      "${abisuffix}" \
+      "$PKGINSTALL_DIR"
+  done
+}
+
+
+function create_toolchain_package {
+
+	printf ">> Creating $longname toolchain package.\n"
+	rm -f "$PACKAGE_DIR/$toolchainpackage"
+	rm -rf "$BUILDROOT"/*
+
+  install_dependencies "$abisuffix" TOOLCHAIN_ITEMS[@]
+
+	printf ">>> Running custom toolchain setup - $PACKAGE_DIR/$toolchainpackage.\n"
+
+	custom_toolchain_setup
+
+	printf ">>> Compressing full toolchain directory - $PACKAGE_DIR/$toolchainpackage.\n"
+	pushd "$BUILDROOT" > /dev/null
+	LOGNAME="$LOG_DIR/package/$toolchainpackage.log"
+	$COMPRESS "$PACKAGE_DIR/$toolchainpackage" *  > $LOGNAME 2>&1 || exit 1
+	rm -rf "$BUILDROOT"/*
+	popd > /dev/null
+}
+
+function build_toolchain
+(
+  longname="$1"
+  toolchainpackage=${longname}_gcc-${gcc_version}.toolchain${PACKAGE_EXT}
+
+  # abisuffix to prevent mixing C++ eh libgcc linkage failures. Only relevant for GMP/PPL.
+  case "$host" in
+    *-mingw32)
+      prereqabisuffix="$abisuffix"
+  esac
+
+  printf "> Building GCC compiler from $host to $TARGET.\n"
+
+  toolchain_build="$BUILD_DIR/$longname"
+  toolchain_log="$LOG_DIR/$longname"
+
+  prereqs="${PREREQS[@]}"
+  printf ">> Building GCC prerequisites - ${prereqs[@]}.\n"
+  build_toolchain_prereqs "$host" "$CROSS_BUILD" "/" "$prereqabisuffix" \
+		"$PKGINSTALL_DIR" PREREQS[@] || exit 1
+
+  # Toolchain
+
+  if [ -f "$PACKAGE_DIR/$toolchainpackage" ]; then
+  	printf ">> $longname toolchain package already created.\n"
+  else
+		build_toolchain_targets "$prereqabisuffix" TARGETS[@] || exit 1
+		create_toolchain_package	
+  fi
+)

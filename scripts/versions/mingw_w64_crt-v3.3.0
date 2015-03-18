@@ -1,0 +1,60 @@
+#!/bin/bash
+
+SUBNAME=mingw-w64
+SUBVERSION=v3.3.0
+NAME=$SUBNAME-$SUBVERSION
+COMP=crt
+COMP_SUBNAME=$SUBNAME-$COMP
+SRC_DIR_NAME=$NAME/$COMP_SUBNAME
+CONFIG_DIR_NAME=$SRC_DIR_NAME
+URL=http://sourceforge.net/projects/mingw-w64/files/$SUBNAME/$SUBNAME-release/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+#
+PATCHES=( )
+
+DEPENDS=( 
+	$([[ $host == $CROSS_BUILD ]] && echo 'gcc_bootstrap')
+	$([[ $host == $CROSS_BUILD ]] && echo 'binutils')
+  'mingw_w64_headers'
+)
+
+LICENSES=( ../COPYING.MinGW-w64/COPYING.MinGW-w64.txt
+           ../COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt
+           ../COPYING
+           ../DISCLAIMER
+           ../DISCLAIMER.PD
+)
+
+CONFIGURE_FLAGS=(
+	--host=$target
+	--build=$BUILD
+	--target=$target
+	#
+	--prefix=/$target
+	#
+	--enable-wildcard
+	$mingw_opts
+)
+
+EXECUTE_AFTER_DEPENDS=(
+		'[[ `readlink $BUILDROOT/$shortname` == $target ]] || 
+			$(
+    		mv $BUILDROOT/$target $BUILDROOT/$shortname/
+		  )
+		'
+)
+
+#
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+INSTALL_FLAGS=(
+	-j$JOBS
+	install
+)
+
+# **************************************************************************

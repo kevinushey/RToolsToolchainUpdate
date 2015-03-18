@@ -1,0 +1,82 @@
+#!/bin/bash
+
+SUBNAME=gcc
+SUBVERSION=4.9.2
+NAME=$SUBNAME-$SUBVERSION
+#SRC_DIR_NAME=$NAME/gcc_bootstrap
+SRC_DIR_NAME=$NAME
+CONFIG_DIR_NAME=$SRC_DIR_NAME
+URL=$GNU_URL/gcc/$NAME/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+PATCHES=(
+	'gcc-4.9.2-latest-prereqs.patch'
+)
+
+DEPENDS=( 
+		'mingw_w64_headers'
+		$([[ $host == $CROSS_BUILD ]] && echo 'binutils')
+)
+
+LICENSES=(
+	COPYING
+	COPYING.LIB
+	COPYING.RUNTIME
+	COPYING3
+	COPYING3.LIB
+)
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	--target=$TARGET
+
+	--prefix=$PREFIX
+	--with-sysroot=$PREFIX
+	--enable-languages=c,c++,lto
+  --disable-cloog-version-check
+  --enable-cloog-backend=isl
+	--disable-isl-version-check
+
+  --disable-multilib
+	--enable-libgomp
+	--disable-libstdcxx-pch
+	--enable-threads=posix
+
+	${gcc_exception_opts}
+
+  --disable-shared --enable-static --enable-plugins
+  --enable-fully-dynamic-string --enable-libstdcxx-time 
+  --disable-nls --disable-werror --enable-checking=release
+  --with-gnu-as --with-gnu-ld
+  LDFLAGS="-static"
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+EXECUTE_AFTER_PATCH=(
+	'./contrib/download_prerequisites'
+)
+
+EXECUTE_AFTER_INSTALL=(
+    '[[ -d $PKGINSTALL_DIR/$BUILDROOT/$shortname && 
+			 $(
+				mv $PKGINSTALL_DIR/$BUILDROOT/$shortname/* $PKGINSTALL_DIR/
+		  )
+		]] || true'
+)
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all-gcc
+)
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip-gcc
+)
+
+# **************************************************************************

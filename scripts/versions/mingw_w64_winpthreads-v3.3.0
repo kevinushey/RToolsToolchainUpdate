@@ -1,0 +1,67 @@
+#!/bin/bash
+SUBNAME=mingw-w64
+SUBVERSION=v3.3.0
+NAME=$SUBNAME-$SUBVERSION
+COMP=winpthreads
+COMP_SUBNAME=$SUBNAME-libraries
+SRC_DIR_NAME=$NAME/$COMP_SUBNAME/$COMP
+CONFIG_DIR_NAME=$SRC_DIR_NAME
+URL=http://sourceforge.net/projects/mingw-w64/files/$SUBNAME/$SUBNAME-release/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+#
+
+PATCHES=( )
+
+DEPENDS=( 
+ 	$([[ $host == $CROSS_BUILD ]] && echo 'gcc_bootstrap')
+  $([[ $host == $CROSS_BUILD ]] && echo 'binutils')
+  'mingw_w64_crt'
+  'mingw_w64_headers'
+)
+
+LICENSES=(
+           COPYING
+)
+
+#
+
+CONFIGURE_FLAGS=(
+	--host=$target
+	--build=$BUILD
+	--target=$target
+	#
+	--prefix=/$target
+	#
+	--disable-shared
+  --enable-static
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+EXECUTE_AFTER_DEPENDS=(
+    '[[ `readlink $BUILDROOT/$shortname` == $target ]] || 
+      $(
+        mv $BUILDROOT/$target $BUILDROOT/$shortname/
+      )
+    '
+    'cp -v $BUILDROOT/$shortname/$target/lib/libuser32.a 
+			$BUILDROOT/$shortname/$target/lib/libpthread.a'
+)
+
+#
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+INSTALL_FLAGS=(
+	-j$JOBS
+	install
+)
+
+# **************************************************************************

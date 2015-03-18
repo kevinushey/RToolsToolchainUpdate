@@ -1,0 +1,16 @@
+ROOT_DIR=$HOME/RtoolsStatic
+BUILD_ARCHITECTURES=(x32)
+USE_DWARF=no
+USE_MULTILIB=no
+
+PACKAGE_EXT=".tar.gz"
+COMPRESS="tar --hard-dereference -zvcf"
+DECOMPRESS="tar -xf"
+
+export GNU_URL="ftp://ftp.nluug.nl/mirror/gnu"
+GCC_LANGUAGES="c,c++,lto,fortran"
+
+JOBS=1
+CROSS_BUILD=`gcc -dumpmachine`
+
+NATIVE_ARCHITECTURES=(x32 x64)

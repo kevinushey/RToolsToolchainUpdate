@@ -1,0 +1,49 @@
+#!/bin/bash
+
+SUBNAME=ppl
+SUBVERSION=1.1
+NAME=$SUBNAME-$SUBVERSION
+SRC_DIR_NAME=$NAME
+URL=ftp://ftp.cs.unipr.it/pub/ppl/releases/$SUBVERSION/$NAME.tar.gz
+TYPE=.tar.gz
+
+
+PATCHES=( )
+
+DEPENDS=( 'gmp' )
+
+LICENSES=( COPYING )
+
+#
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	#
+  --disable-shared 
+	--enable-static
+	--with-gmp=$BUILDROOT
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+#
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

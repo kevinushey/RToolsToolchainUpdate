@@ -1,0 +1,35 @@
+#!/bin/bash
+
+NAME=gmp-6.0.0a
+SRC_DIR_NAME=gmp-6.0.0
+CONFIG_DIR_NAME=gmp-6.0.0
+URL=$GNU_URL/gmp/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+PATCHES=( )
+LICENSES=( 'COPYING' )
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	#
+	--prefix=$PREFIX
+	--disable-shared
+	--enable-static
+	--enable-cxx
+	#
+)
+
+#
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

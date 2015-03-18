@@ -1,0 +1,63 @@
+#!/bin/bash
+
+SUBNAME=mingw-w64
+SUBVERSION=v3.3.0
+NAME=$SUBNAME-$SUBVERSION
+COMP=headers
+COMP_SUBNAME=$SUBNAME-$COMP
+SRC_DIR_NAME=$NAME/$COMP_SUBNAME
+CONFIG_DIR_NAME=$SRC_DIR_NAME
+URL=http://sourceforge.net/projects/mingw-w64/files/$SUBNAME/$SUBNAME-release/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+#
+
+PATCHES=( )
+
+DEPENDS=( )
+
+LICENSES=( ../COPYING.MinGW-w64/COPYING.MinGW-w64.txt
+           ../COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt
+           ../COPYING
+           ../DISCLAIMER
+           ../DISCLAIMER.PD
+           ddk/readme.txt
+           direct-x/COPYING.LIB
+           direct-x/readme.txt
+)
+
+#
+CONFIGURE_FLAGS=(
+	--host=$target
+	--build=$BUILD
+	--target=$target
+	#
+	--prefix=/$target
+	#
+	-enable-sdk=all
+	--enable-secure-api
+	#
+	CFLAGS="\"$COMMON_CFLAGS\""
+	CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+EXECUTE_AFTER_INSTALL=(
+    'mkdir -p $PKGINSTALL_DIR/$shortname/mingw/include'
+    'echo $this_version >> $PKGINSTALL_DIR/$shortname/mingw/include/README'
+)
+
+#
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+#
+INSTALL_FLAGS=(
+	-j$JOBS
+	install
+)
+
+# **************************************************************************

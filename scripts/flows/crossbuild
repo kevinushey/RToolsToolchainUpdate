@@ -1,0 +1,16 @@
+
+
+PREREQS=(
+	expat
+)
+
+TARGETS=(
+	mingw_w64_headers
+  binutils
+	gcc_bootstrap
+	mingw_w64_crt
+	mingw_w64_winpthreads
+	gcc
+)
+
+

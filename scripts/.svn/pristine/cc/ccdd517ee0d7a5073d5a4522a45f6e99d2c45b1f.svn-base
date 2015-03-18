@@ -1,0 +1,69 @@
+There are 2 main projects 
+	- build-linux-cross.sh
+		This builds linux cross compilers capable of generating windows binaries
+
+	- build-window-native.sh
+		This uses cross toolchains built with build-linux-cross.sh to build native windows toolchains
+
+Toolchain naming conventions:
+
+ <HOST><32|64><TARGET><32|64>
+
+ So, linux32mingw32 - would be 32-bit linux hosted toolchain that generates 32-bit window's objects
+     mingw32mingw32 - would be 32-bit window's hosted toolchain that generate 32-bit window's objects
+
+
+Example, usage:
+
+	build-linux-cross.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2
+	build-window-native.sh --toolchain=toolchains/mingw-w64-gcc-4.9.2.native
+
+	Also, check_prerequisites.sh can be run before you start to make sure your linux system has required packages.
+		NOTE - this might be imcomplete and needs testing on fress install. Also, I think this is only piece that is
+	 			   Ubuntu dependent.
+
+	I have only tested on ia32 Ubuntu 14.04.
+
+  Design attempts to isolate all the components details into their own fields. This should make it easy to extend this
+  in future to enable newer versions of componments. The files under toolchains/* tell scripts which verions of things to
+  use. The cross/native builds have different 'flows' which are described under flows/*.
+
+	Then the individual componements details are under versions/*. For example, versions/binutils-2.25
+
+	Note, for a given gcc, you should create a unique version file for bootstrap, cross, and native.
+
+	I have mostly removed any multilib and x64-seh exception support. These can be added in future if you desire.
+
+	Also, about gcc prereqs. Newer gcc's now include in there source contrib/download_prerequisites. This allows for a much 
+  easier bootstraping and final gcc builds. I am not how the versions of those prereqs are decided, but they aren't the 
+  latest. For the gcc-4.9.2 build, since you wanted the latest, After I download the source, but before I configure, I patch the  contrib/download_prerequisites to use latest versions of gmp, mpc, mpfr, ...
+
+  Scripts above read in 'defaults' and this is easiest way to control things. 
+	The array BUILD_ARCHITECTURES controls which architectures you want to build. 
+	I no longer test with building x32 and x64 at same time so use at own risk. 
+	I set to x32, let it finish and then x64. NATIVE_ARCHITECTURES is fine with both set if you want.
+
+	Example:
+
+ROOT_DIR=$HOME/rtools-cross-5
+BUILD_ARCHITECTURES=()
+USE_DWARF=no
+USE_MULTILIB=no
+
+PACKAGE_EXT=".tar.xz"
+COMPRESS="tar -Jvcf"
+DECOMPRESS="tar -xf"
+
+export GNU_URL="ftp://ftp.nluug.nl/mirror/gnu"
+GCC_LANGUAGES="c,c++,lto,fortran"
+
+JOBS=1
+CROSS_BUILD=`gcc -dumpmachine`
+
+#BUILD_ARCHITECTURES=(x32 x64)
+BUILD_ARCHITECTURES=(x32)
+NATIVE_ARCHITECTURES=(x32 x64)
+
+
+
+

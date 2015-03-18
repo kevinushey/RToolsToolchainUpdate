@@ -1,0 +1,92 @@
+#!/bin/bash
+
+SUBNAME=gcc
+SUBVERSION=4.9.2
+NAME=$SUBNAME-$SUBVERSION
+SRC_DIR_NAME=$NAME
+URL=$GNU_URL/gcc/$NAME/$NAME.tar.bz2
+TYPE=.tar.bz2
+
+PATCHES=( )
+
+DEPENDS=( 
+		$([[ $host == $CROSS_BUILD ]] && echo 'binutils')
+		'mingw_w64_headers'
+		'mingw_w64_crt'
+		'mingw_w64_winpthreads'
+)
+
+LICENSES=(
+	COPYING
+	COPYING.LIB
+	COPYING.RUNTIME
+	COPYING3
+	COPYING3.LIB
+)
+
+CONFIGURE_FLAGS=(
+	--host=$HOST
+	--build=$BUILD
+	--target=$TARGET
+
+	--prefix=$PREFIX
+	--with-sysroot=$PREFIX
+	--enable-languages=${GCC_LANGUAGES}
+  --disable-cloog-version-check
+  --enable-cloog-backend=isl
+	--disable-isl-version-check
+
+	$gcc_exception_opts
+
+  --disable-multilib
+	--enable-libgomp
+	--disable-libstdcxx-pch
+	--enable-threads=posix
+
+  --disable-shared --enable-static --enable-plugins
+  --enable-fully-dynamic-string --enable-libstdcxx-time 
+  --disable-nls --disable-werror --enable-checking=release
+  --with-gnu-as --with-gnu-ld
+  LDFLAGS="-static"
+	#
+	#CFLAGS="\"$COMMON_CFLAGS\""
+	#CXXFLAGS="\"$COMMON_CXXFLAGS\""
+	#CPPFLAGS="\"$COMMON_CPPFLAGS\""
+	#LDFLAGS="\"$COMMON_LDFLAGS\""
+)
+
+EXECUTE_AFTER_DEPENDS=(
+	'[[ `readlink $BUILDROOT/$shortname` == $target ]] || 
+	$(
+		mv $BUILDROOT/$target $BUILDROOT/$shortname/
+	)
+  '
+)
+
+EXECUTE_AFTER_INSTALL=(
+    '[[ -d $PKGINSTALL_DIR/$BUILDROOT/$shortname && 
+			 $(
+				mv $PKGINSTALL_DIR/$BUILDROOT/$shortname/* $PKGINSTALL_DIR/
+		  )
+		]] || true'
+    'rm -fr $PKGINSTALL_DIR/lib/libiberty.a'
+    'rm -fr $PKGINSTALL_DIR/mingw'
+    '[[ -f $PKGINSTALL_DIR/lib/libgcc_s$abisuffix-1.dll &&
+			 $(
+      	mv -v $PKGINSTALL_DIR/lib/libgcc_s$abisuffix-1.dll $PKGINSTALL_DIR/bin/
+			)
+		]] || true'
+)
+#
+
+MAKE_FLAGS=(
+	-j$JOBS
+	all
+)
+
+INSTALL_FLAGS=(
+	-j$JOBS
+	install-strip
+)
+
+# **************************************************************************

@@ -1,0 +1,18 @@
+ROOT_DIR=$HOME/rtools-cross-6
+BUILD_ARCHITECTURES=()
+USE_DWARF=no
+USE_MULTILIB=no
+
+PACKAGE_EXT=".tar.xz"
+COMPRESS="tar -Jvcf"
+DECOMPRESS="tar -xf"
+
+export GNU_URL="ftp://ftp.nluug.nl/mirror/gnu"
+GCC_LANGUAGES="c,c++,lto,fortran"
+
+JOBS=1
+CROSS_BUILD=`gcc -dumpmachine`
+
+BUILD_ARCHITECTURES=(x32 x64)
+#BUILD_ARCHITECTURES=(x64)
+NATIVE_ARCHITECTURES=(x32 x64)

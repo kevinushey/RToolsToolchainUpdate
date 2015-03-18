@@ -1,0 +1,112 @@
+# **************************************************************************
+
+RUN_ARGS="$@"
+[[ $# == 1 && $1 == --help	|| $[ $# == 0 || $# > 8 ] == 1 ]] && {
+	echo "usage:"
+	echo "  ./${0##*/} [OPTIONS] <x32|x64>"
+	echo "  help:"
+	echo "    --toolchain=name - specifies which toolchain definition file to use"
+	echo "    --buildroot=path - specifies the build root directory"
+	echo "    --dwarf          - build GCC with DWARF exceptions"
+	echo "    --no-multilib    - build GCC without multilib support"
+	echo "    --dyn-deps       - build GCC with dynamically dependencies"
+	echo "    --rev=N          - specifies number of the build revision"
+	echo "    --threads=m      - specifies the threads model for GCC/libstdc++"
+	echo "                       available: win32, posix"
+	echo "    --version        - pring the version of the MinGW-builds scripts"
+	echo "    --mingw-compress - compressing MinGW"
+	echo "    --srcs-compress  - compressing sources"
+
+	exit 0
+}
+
+[[ $SHOW_LOG_ON_ERROR == yes && ! -f $LOGVIEWER ]] && {
+	LOGVIEWER=vi
+}
+
+# **************************************************************************
+
+while [[ $# > 0 ]]; do
+	case $1 in
+		--toolchain=*)
+			TOOLCHAIN_DEFINITION=${1/--toolchain=/}
+		;;
+		--buildroot=*)
+			ROOT_DIR=${1/--buildroot=/}
+		;;
+		--dwarf)
+			USE_DWARF=yes
+			USE_MULTILIB=no
+			[[ ${BUILD_ARCHITECTURES[@]} =~ x32 ]] && { shift; continue; }
+			BUILD_ARCHITECTURES=( ${BUILD_ARCHITECTURES[@]} x32 )
+		;;
+		--no-multilib)
+			USE_MULTILIB=no
+		;;
+		--dyn-deps)
+			GCC_DEPS_LINK_TYPE="--enable-shared --disable-static"
+		;;
+		x32)
+			[[ ${BUILD_ARCHITECTURES[@]} =~ x32 ]] && { shift; continue; }
+			BUILD_ARCHITECTURES=( ${BUILD_ARCHITECTURES[@]} x32 )
+		;;
+		x64)
+			[[ ${BUILD_ARCHITECTURES[@]} =~ x64 ]] && { shift; continue; }
+			BUILD_ARCHITECTURES=( ${BUILD_ARCHITECTURES[@]} x64 )
+		;;
+		*)
+			echo "bad command line. terminate."
+			exit 1
+		;;
+	esac
+	shift
+done
+
+# **************************************************************************
+
+[[ ! -d $ROOT_DIR ]] && {
+	mkdir -p $ROOT_DIR
+	[[ $? == 0 ]] && {
+		rm -Rf $ROOT_DIR
+	} || {
+		echo "bad build root directory. terminate."
+		exit 1
+	}
+}
+
+SRCS_DIR=$ROOT_DIR/sources
+
+# **************************************************************************
+
+[[ -z $TOOLCHAIN_DEFINITION ]] && {
+	echo "please specify --toolchain=file. terminate."
+	exit 1
+}
+
+[[ ! -f $TOOLCHAIN_DEFINITION ]] && {
+	echo "bad  toolchain definition file. terminate."; exit 1;
+} 
+
+{
+	[[ ${#BUILD_ARCHITECTURES[@]} > 2 || ${#BUILD_ARCHITECTURES[@]} == 0 || \
+		${BUILD_ARCHITECTURES[0]} == ${BUILD_ARCHITECTURES[1]} ]] && {
+		echo "error in build architectures(${BUILD_ARCHITECTURES[@]}). terminate."
+		exit 1
+	}
+	[[ $USE_DWARF == yes && $USE_MULTILIB == yes ]] && {
+		echo "DWARF exceptions not allowed on multilib architecture. terminate."
+		exit 1
+	}
+	[[ $USE_DWARF == yes ]] && {
+		[[ ${BUILD_ARCHITECTURES[@]} =~ x64 ]] && {
+			echo "DWARF exceptions not allowed on x86_64 architecture. terminate."
+			exit 1
+		}
+		[[ ${#BUILD_ARCHITECTURES[@]} > 1 ]] && {
+			echo "error in build architectures(${BUILD_ARCHITECTURES[@]}). terminate."
+			exit 1
+		}
+	}
+}
+
+# **************************************************************************
