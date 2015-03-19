@@ -21,7 +21,8 @@ section below so we can work on fixing them and making sure they stay fixed.
 ## Installing cross-compiler
 
 Installation was done using the scripts from Elance contractor
-Doug R.  The full set of scripts are in [scripts.tar.gz](scripts.tar.gz).
+Doug R.  The full set of scripts are in
+[scripts.tar.gz](http://cran.rstudio.com/bin/windows/Rtools/scripts/scripts.tar.gz).
 
 On Linux VM, installed scripts to `~/Mingw-w64`.
 
@@ -66,11 +67,11 @@ then the native compilers using
 These take a few hours to run, and produce a number of tarballs in
 `$HOME/RtoolsStatic/packages`; copies are here:
 
-  - Linux cross-compiler for 32 bit Windows output [linux32mingw32_gcc-4.9.2.toolchain.tar.gz](linux32mingw32_gcc-4.9.2.toolchain.tar.gz)
-  - Linux cross-compiler for 64 bit Windows output [linux32mingw64_gcc-4.9.2.toolchain.tar.gz](linux32mingw64_gcc-4.9.2.toolchain.tar.gz)
+  - Linux cross-compiler for 32 bit Windows output [linux32mingw32_gcc-4.9.2.toolchain.tar.gz](http://cran.rstudio.com/bin/windows/Rtools/scripts/linux32mingw32_gcc-4.9.2.toolchain.tar.gz)
+  - Linux cross-compiler for 64 bit Windows output [linux32mingw64_gcc-4.9.2.toolchain.tar.gz](http://cran.rstudio.com/bin/windows/Rtools/scripts/linux32mingw64_gcc-4.9.2.toolchain.tar.gz)
   
-  - Windows native compiler for 32 bit Windows output [mingw32mingw32_gcc-4.9.2.toolchain.tar.gz](mingw32mingw32_gcc-4.9.2.toolchain.tar.gz)
-  - Windows native compiler for 64 bit Windows output [mingw32mingw64_gcc-4.9.2.toolchain.tar.gz](mingw32mingw64_gcc-4.9.2.toolchain.tar.gz)
+  - Windows native compiler for 32 bit Windows output [mingw32mingw32_gcc-4.9.2.toolchain.tar.gz](http://cran.rstudio.com/bin/windows/Rtools/scripts/mingw32mingw32_gcc-4.9.2.toolchain.tar.gz)
+  - Windows native compiler for 64 bit Windows output [mingw32mingw64_gcc-4.9.2.toolchain.tar.gz](http://cran.rstudio.com/bin/windows/Rtools/scripts/mingw32mingw64_gcc-4.9.2.toolchain.tar.gz)
 
 
 ## Building multilib version
