@@ -173,7 +173,7 @@ Speculation:  This may require recompiling external libs?
 
 ### Small numeric differences?
 
-The stats package examples don't give the standard results:
+The stats package examples don't give the standard results in 64 bits:
 ```
 Testing examples for package 'stats'
    comparing 'stats-Ex.Rout' to 'stats-Ex.Rout.save' ...
@@ -190,5 +190,13 @@ Testing examples for package 'stats'
 ---
  > [18,] 0.001 ***
 ```
-Speculation:  this may be an old MinGW bug that Brian Ripley patched
-in the last toolchain, i.e. `sqrt(-0)` should be `-0` in C code.
+The correct values give a * for 0.05, ** for 0.01, and *** for 0.001:
+```{r}
+pval <- rev(sort(c(outer(1:6, 10^-(1:3)))))
+symp <- symnum(pval, corr = FALSE,
+               cutpoints = c(0,  .001,.01,.05, .1, 1),
+               symbols = c("***","**","*","."," "))
+noquote(cbind(P.val = format(pval), Signif = symp))
+```
+The issue here is that in the 64 bit build, `5*10^-2` is
+`0x1.999999999999bp-5`, which is one bit bigger than `0.05 = 0x1.999999999999ap-5`.  In the 32 bit build, they are both `0x1.999999999999ap-5`, which I believe is the correct result.

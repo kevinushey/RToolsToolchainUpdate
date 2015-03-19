@@ -189,7 +189,7 @@ MULTI =</code></pre>
 </div>
 <div id="small-numeric-differences" class="section level3">
 <h3>Small numeric differences?</h3>
-<p>The stats package examples don’t give the standard results:</p>
+<p>The stats package examples don’t give the standard results in 64 bits:</p>
 <pre><code>Testing examples for package 'stats'
    comparing 'stats-Ex.Rout' to 'stats-Ex.Rout.save' ...
 16222c16222
@@ -204,7 +204,32 @@ MULTI =</code></pre>
 &lt; [18,] 0.001 **
 ---
  &gt; [18,] 0.001 ***</code></pre>
-<p>Speculation: this may be an old MinGW bug that Brian Ripley patched in the last toolchain, i.e. <code>sqrt(-0)</code> should be <code>-0</code> in C code.</p>
+<p>The correct values give a * for 0.05, ** for 0.01, and *** for 0.001:</p>
+<pre class="r"><code>pval &lt;- rev(sort(c(outer(1:6, 10^-(1:3)))))
+symp &lt;- symnum(pval, corr = FALSE,
+               cutpoints = c(0,  .001,.01,.05, .1, 1),
+               symbols = c(&quot;***&quot;,&quot;**&quot;,&quot;*&quot;,&quot;.&quot;,&quot; &quot;))
+noquote(cbind(P.val = format(pval), Signif = symp))</code></pre>
+<pre><code>##       P.val Signif
+##  [1,] 0.600       
+##  [2,] 0.500       
+##  [3,] 0.400       
+##  [4,] 0.300       
+##  [5,] 0.200       
+##  [6,] 0.100 .     
+##  [7,] 0.060 .     
+##  [8,] 0.050 *     
+##  [9,] 0.040 *     
+## [10,] 0.030 *     
+## [11,] 0.020 *     
+## [12,] 0.010 **    
+## [13,] 0.006 **    
+## [14,] 0.005 **    
+## [15,] 0.004 **    
+## [16,] 0.003 **    
+## [17,] 0.002 **    
+## [18,] 0.001 ***</code></pre>
+<p>The issue here is that in the 64 bit build, <code>5*10^-2</code> is <code>0x1.999999999999bp-5</code>, which is one bit bigger than <code>0.05 = 0x1.999999999999ap-5</code>. In the 32 bit build, they are both <code>0x1.999999999999ap-5</code>, which I believe is the correct result.</p>
 </div>
 </div>
 
