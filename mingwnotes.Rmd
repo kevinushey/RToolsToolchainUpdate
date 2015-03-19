@@ -1,7 +1,7 @@
 ---
 title: "MinGW-w64 Notes"
 author: "Duncan Murdoch"
-date: "March 18, 2015"
+date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_document:
     toc: yes
@@ -135,7 +135,9 @@ CXXFLAGS = -O2 -Wall -fno-asynchronous-unwind-tables $(DEBUGFLAG) @EOPTS@
 
 These are current and previous problems.
 
-1. FIXED:  [Rf_error problem](https://github.com/kevinushey/RToolsTest): This is a
+### Rf_error problem
+
+FIXED:  [Rf_error problem](https://github.com/kevinushey/RToolsTest): This is a
 small package called RToolsTest, written by Kevin Ushey.  It calls
 `Rf_error()` from C++, which caused a crash.  Run it via
 ```
@@ -144,7 +146,9 @@ small package called RToolsTest, written by Kevin Ushey.  It calls
 ```
 The -fno-asynchronous-unwind-tables option appeared to fix this.
 
-2. Problem in V8:  This works in the 64 bit build, but dies with a segfault
+### V8 crash in 32 bits
+
+Problem in V8:  This works in the 64 bit build, but dies with a segfault
 in the 32 bit build:
 ```
     install.packages("V8", type = "source")
@@ -164,3 +168,27 @@ At the time of the crash, the stack is corrupt, with entries
     R_doDotCall()
 ```
 followed by garbage.
+
+Speculation:  This may require recompiling external libs?
+
+### Small numeric differences?
+
+The stats package examples don't give the standard results:
+```
+Testing examples for package 'stats'
+   comparing 'stats-Ex.Rout' to 'stats-Ex.Rout.save' ...
+16222c16222
+<  [8,] 0.050 .
+---
+ >  [8,] 0.050 *
+16226c16226
+< [12,] 0.010 *
+---
+ > [12,] 0.010 **
+16232c16232
+< [18,] 0.001 **
+---
+ > [18,] 0.001 ***
+```
+Speculation:  this may be an old MinGW bug that Brian Ripley patched
+in the last toolchain, i.e. `sqrt(-0)` should be `-0` in C code.

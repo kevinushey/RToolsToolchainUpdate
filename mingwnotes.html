@@ -10,7 +10,7 @@
 
 <meta name="author" content="Duncan Murdoch" />
 
-<meta name="date" content="2015-03-18" />
+<meta name="date" content="2015-03-19" />
 
 <title>MinGW-w64 Notes</title>
 
@@ -64,7 +64,7 @@ img {
 <div id="header">
 <h1 class="title">MinGW-w64 Notes</h1>
 <h4 class="author"><em>Duncan Murdoch</em></h4>
-<h4 class="date"><em>March 18, 2015</em></h4>
+<h4 class="date"><em>2015-03-19</em></h4>
 </div>
 
 <div id="TOC">
@@ -75,7 +75,11 @@ img {
 <li><a href="#building-the-seh-version">Building the SEH version</a></li>
 <li><a href="#threading-model">Threading model</a></li>
 <li><a href="#r-devel-patches-needed">R-devel patches needed</a></li>
-<li><a href="#test-cases">Test cases</a></li>
+<li><a href="#test-cases">Test cases</a><ul>
+<li><a href="#rf_error-problem">Rf_error problem</a></li>
+<li><a href="#v8-crash-in-32-bits">V8 crash in 32 bits</a></li>
+<li><a href="#small-numeric-differences">Small numeric differences?</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -158,26 +162,50 @@ MULTI =</code></pre>
 <div id="test-cases" class="section level2">
 <h2>Test cases</h2>
 <p>These are current and previous problems.</p>
-<ol style="list-style-type: decimal">
-<li><p>FIXED: <a href="https://github.com/kevinushey/RToolsTest">Rf_error problem</a>: This is a small package called RToolsTest, written by Kevin Ushey. It calls <code>Rf_error()</code> from C++, which caused a crash. Run it via</p>
-<pre><code>devtools::install_github(&quot;kevinushey/RToolsTest&quot;)
-RToolsTest::ouch()</code></pre>
-<p>The -fno-asynchronous-unwind-tables option appeared to fix this.</p></li>
-<li><p>Problem in V8: This works in the 64 bit build, but dies with a segfault in the 32 bit build:</p>
-<pre><code>install.packages(&quot;V8&quot;, type = &quot;source&quot;)
-library(V8)
-ct &lt;- new_context()</code></pre>
+<div id="rf_error-problem" class="section level3">
+<h3>Rf_error problem</h3>
+<p>FIXED: <a href="https://github.com/kevinushey/RToolsTest">Rf_error problem</a>: This is a small package called RToolsTest, written by Kevin Ushey. It calls <code>Rf_error()</code> from C++, which caused a crash. Run it via</p>
+<pre><code>    devtools::install_github(&quot;kevinushey/RToolsTest&quot;)
+    RToolsTest::ouch()</code></pre>
+<p>The -fno-asynchronous-unwind-tables option appeared to fix this.</p>
+</div>
+<div id="v8-crash-in-32-bits" class="section level3">
+<h3>V8 crash in 32 bits</h3>
+<p>Problem in V8: This works in the 64 bit build, but dies with a segfault in the 32 bit build:</p>
+<pre><code>    install.packages(&quot;V8&quot;, type = &quot;source&quot;)
+    library(V8)
+    ct &lt;- new_context()</code></pre>
 <p>The segfault happens when <code>V8_make_context</code> in <code>RcppExports.cpp</code> is called. At the time of the crash, the stack is corrupt, with entries</p>
-<pre><code>v8::internal::JSObject::elements()
-v8::NeanderObject::get(int)
-v8::NeanderArray::length()
-v8::NeanderArray::add(v8::internal::Handle&lt;v8::internal::Object&gt;)
-v8::Template::Set(v8::Handle&lt;v8::String&gt;, v8::Handle&lt;v8::Data&gt;, v8::PropertyAttribute)
-make_context at V8.cpp:79
-V8_make_context(set+consoleSEXP) at RcppExports.cpp:17
-R_doDotCall()</code></pre>
-<p>followed by garbage.</p></li>
-</ol>
+<pre><code>    v8::internal::JSObject::elements()
+    v8::NeanderObject::get(int)
+    v8::NeanderArray::length()
+    v8::NeanderArray::add(v8::internal::Handle&lt;v8::internal::Object&gt;)
+    v8::Template::Set(v8::Handle&lt;v8::String&gt;, v8::Handle&lt;v8::Data&gt;, v8::PropertyAttribute)
+    make_context at V8.cpp:79
+    V8_make_context(set+consoleSEXP) at RcppExports.cpp:17
+    R_doDotCall()</code></pre>
+<p>followed by garbage.</p>
+<p>Speculation: This may require recompiling external libs?</p>
+</div>
+<div id="small-numeric-differences" class="section level3">
+<h3>Small numeric differences?</h3>
+<p>The stats package examples don’t give the standard results:</p>
+<pre><code>Testing examples for package 'stats'
+   comparing 'stats-Ex.Rout' to 'stats-Ex.Rout.save' ...
+16222c16222
+&lt;  [8,] 0.050 .
+---
+ &gt;  [8,] 0.050 *
+16226c16226
+&lt; [12,] 0.010 *
+---
+ &gt; [12,] 0.010 **
+16232c16232
+&lt; [18,] 0.001 **
+---
+ &gt; [18,] 0.001 ***</code></pre>
+<p>Speculation: this may be an old MinGW bug that Brian Ripley patched in the last toolchain, i.e. <code>sqrt(-0)</code> should be <code>-0</code> in C code.</p>
+</div>
 </div>
 
 
