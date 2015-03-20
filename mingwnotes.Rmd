@@ -204,3 +204,8 @@ In the 32 bit build, they are both `0x1.999999999999ap-5`, which I believe
 is the correct result.  I've traced this to the implementation of `pow(x,y)`
 in the C run-time which is part of MinGW-w64 and filed [a bug
 report](http://sourceforge.net/p/mingw-w64/bugs/466/) there.
+
+I've compared the source for pow(), and the functions it uses (exp2l(), and
+log2l()) from MinGW-w64 2.0.9
+(used in the previous toolchain) with 3.3.0 (used in the new one), and can't
+spot any changes.

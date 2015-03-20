@@ -230,6 +230,7 @@ noquote(cbind(P.val = format(pval), Signif = symp))</code></pre>
 ## [17,] 0.002 **    
 ## [18,] 0.001 ***</code></pre>
 <p>The issue here is that in the 64 bit build, <code>5*10^-2</code> is <code>0x1.999999999999bp-5</code>, which is one bit bigger than <code>0.05 = 0x1.999999999999ap-5</code>.<br />In the 32 bit build, they are both <code>0x1.999999999999ap-5</code>, which I believe is the correct result. I’ve traced this to the implementation of <code>pow(x,y)</code> in the C run-time which is part of MinGW-w64 and filed <a href="http://sourceforge.net/p/mingw-w64/bugs/466/">a bug report</a> there.</p>
+<p>I’ve compared the source for pow(), and the functions it uses (exp2l(), and log2l()) from MinGW-w64 2.0.9 (used in the previous toolchain) with 3.3.0 (used in the new one), and can’t spot any changes.</p>
 </div>
 </div>
 
