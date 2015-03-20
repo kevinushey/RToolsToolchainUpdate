@@ -199,4 +199,8 @@ symp <- symnum(pval, corr = FALSE,
 noquote(cbind(P.val = format(pval), Signif = symp))
 ```
 The issue here is that in the 64 bit build, `5*10^-2` is
-`0x1.999999999999bp-5`, which is one bit bigger than `0.05 = 0x1.999999999999ap-5`.  In the 32 bit build, they are both `0x1.999999999999ap-5`, which I believe is the correct result.
+`0x1.999999999999bp-5`, which is one bit bigger than `0.05 = 0x1.999999999999ap-5`.  
+In the 32 bit build, they are both `0x1.999999999999ap-5`, which I believe 
+is the correct result.  I've traced this to the implementation of `pow(x,y)`
+in the C run-time which is part of MinGW-w64 and filed [a bug
+report](http://sourceforge.net/p/mingw-w64/bugs/466/) there.

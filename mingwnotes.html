@@ -10,7 +10,7 @@
 
 <meta name="author" content="Duncan Murdoch" />
 
-<meta name="date" content="2015-03-19" />
+<meta name="date" content="2015-03-20" />
 
 <title>MinGW-w64 Notes</title>
 
@@ -64,7 +64,7 @@ img {
 <div id="header">
 <h1 class="title">MinGW-w64 Notes</h1>
 <h4 class="author"><em>Duncan Murdoch</em></h4>
-<h4 class="date"><em>2015-03-19</em></h4>
+<h4 class="date"><em>2015-03-20</em></h4>
 </div>
 
 <div id="TOC">
@@ -229,7 +229,7 @@ noquote(cbind(P.val = format(pval), Signif = symp))</code></pre>
 ## [16,] 0.003 **    
 ## [17,] 0.002 **    
 ## [18,] 0.001 ***</code></pre>
-<p>The issue here is that in the 64 bit build, <code>5*10^-2</code> is <code>0x1.999999999999bp-5</code>, which is one bit bigger than <code>0.05 = 0x1.999999999999ap-5</code>. In the 32 bit build, they are both <code>0x1.999999999999ap-5</code>, which I believe is the correct result.</p>
+<p>The issue here is that in the 64 bit build, <code>5*10^-2</code> is <code>0x1.999999999999bp-5</code>, which is one bit bigger than <code>0.05 = 0x1.999999999999ap-5</code>.<br />In the 32 bit build, they are both <code>0x1.999999999999ap-5</code>, which I believe is the correct result. I’ve traced this to the implementation of <code>pow(x,y)</code> in the C run-time which is part of MinGW-w64 and filed <a href="http://sourceforge.net/p/mingw-w64/bugs/466/">a bug report</a> there.</p>
 </div>
 </div>
 
