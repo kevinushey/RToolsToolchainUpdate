@@ -146,6 +146,14 @@ small package called RToolsTest, written by Kevin Ushey.  It calls
 ```
 The -fno-asynchronous-unwind-tables option appeared to fix this.
 
+It looks like this bug is likely the culprit, as pointed out by
+Avraham Adler:
+
+    http://sourceforge.net/p/mingw-w64/bugs/465/
+
+If that's the case, the aforementioned flag may be unnecessary if we
+upgrade to a newer release of the toolchain.
+
 ### V8 crash in 32 bits
 
 Problem in V8:  This works in the 64 bit build, but dies with a segfault
